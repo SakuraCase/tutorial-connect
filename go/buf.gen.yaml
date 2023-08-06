@@ -6,3 +6,9 @@ plugins:
   - plugin: connect-go
     out: gen
     opt: paths=source_relative
+  - plugin: buf.build/bufbuild/es
+    out: ../web/gen
+    opt: target=ts
+  - plugin: buf.build/bufbuild/connect-es
+    out: ../web/gen
+    opt: target=ts
