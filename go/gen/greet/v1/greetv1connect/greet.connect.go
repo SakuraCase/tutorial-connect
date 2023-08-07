@@ -35,11 +35,15 @@ const (
 const (
 	// GreetServiceGreetProcedure is the fully-qualified name of the GreetService's Greet RPC.
 	GreetServiceGreetProcedure = "/greet.v1.GreetService/Greet"
+	// GreetServiceStreamGreetProcedure is the fully-qualified name of the GreetService's StreamGreet
+	// RPC.
+	GreetServiceStreamGreetProcedure = "/greet.v1.GreetService/StreamGreet"
 )
 
 // GreetServiceClient is a client for the greet.v1.GreetService service.
 type GreetServiceClient interface {
 	Greet(context.Context, *connect.Request[v1.GreetRequest]) (*connect.Response[v1.GreetResponse], error)
+	StreamGreet(context.Context, *connect.Request[v1.GreetRequest]) (*connect.ServerStreamForClient[v1.GreetResponse], error)
 }
 
 // NewGreetServiceClient constructs a client for the greet.v1.GreetService service. By default, it
@@ -57,12 +61,18 @@ func NewGreetServiceClient(httpClient connect.HTTPClient, baseURL string, opts .
 			baseURL+GreetServiceGreetProcedure,
 			opts...,
 		),
+		streamGreet: connect.NewClient[v1.GreetRequest, v1.GreetResponse](
+			httpClient,
+			baseURL+GreetServiceStreamGreetProcedure,
+			opts...,
+		),
 	}
 }
 
 // greetServiceClient implements GreetServiceClient.
 type greetServiceClient struct {
-	greet *connect.Client[v1.GreetRequest, v1.GreetResponse]
+	greet       *connect.Client[v1.GreetRequest, v1.GreetResponse]
+	streamGreet *connect.Client[v1.GreetRequest, v1.GreetResponse]
 }
 
 // Greet calls greet.v1.GreetService.Greet.
@@ -70,9 +80,15 @@ func (c *greetServiceClient) Greet(ctx context.Context, req *connect.Request[v1.
 	return c.greet.CallUnary(ctx, req)
 }
 
+// StreamGreet calls greet.v1.GreetService.StreamGreet.
+func (c *greetServiceClient) StreamGreet(ctx context.Context, req *connect.Request[v1.GreetRequest]) (*connect.ServerStreamForClient[v1.GreetResponse], error) {
+	return c.streamGreet.CallServerStream(ctx, req)
+}
+
 // GreetServiceHandler is an implementation of the greet.v1.GreetService service.
 type GreetServiceHandler interface {
 	Greet(context.Context, *connect.Request[v1.GreetRequest]) (*connect.Response[v1.GreetResponse], error)
+	StreamGreet(context.Context, *connect.Request[v1.GreetRequest], *connect.ServerStream[v1.GreetResponse]) error
 }
 
 // NewGreetServiceHandler builds an HTTP handler from the service implementation. It returns the
@@ -86,10 +102,17 @@ func NewGreetServiceHandler(svc GreetServiceHandler, opts ...connect.HandlerOpti
 		svc.Greet,
 		opts...,
 	)
+	greetServiceStreamGreetHandler := connect.NewServerStreamHandler(
+		GreetServiceStreamGreetProcedure,
+		svc.StreamGreet,
+		opts...,
+	)
 	return "/greet.v1.GreetService/", http.HandlerFunc(func(w http.ResponseWriter, r *http.Request) {
 		switch r.URL.Path {
 		case GreetServiceGreetProcedure:
 			greetServiceGreetHandler.ServeHTTP(w, r)
+		case GreetServiceStreamGreetProcedure:
+			greetServiceStreamGreetHandler.ServeHTTP(w, r)
 		default:
 			http.NotFound(w, r)
 		}
@@ -101,4 +124,8 @@ type UnimplementedGreetServiceHandler struct{}
 
 func (UnimplementedGreetServiceHandler) Greet(context.Context, *connect.Request[v1.GreetRequest]) (*connect.Response[v1.GreetResponse], error) {
 	return nil, connect.NewError(connect.CodeUnimplemented, errors.New("greet.v1.GreetService.Greet is not implemented"))
+}
+
+func (UnimplementedGreetServiceHandler) StreamGreet(context.Context, *connect.Request[v1.GreetRequest], *connect.ServerStream[v1.GreetResponse]) error {
+	return connect.NewError(connect.CodeUnimplemented, errors.New("greet.v1.GreetService.StreamGreet is not implemented"))
 }

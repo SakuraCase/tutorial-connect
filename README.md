@@ -1,1 +1,3 @@
-https://connectrpc.com/docs/go/getting-started
+- [公式docs](https://connectrpc.com/docs/go/getting-started)
+- [zenn:connect-goでgRPCの通信方式4種類を網羅！テスト付き実装ガイド](https://zenn.dev/hirochon/articles/4e977f209720ea)
+- [zenn:作ってわかる！ はじめてのgRPC](https://zenn.dev/hsaki/books/golang-grpc-starting)
