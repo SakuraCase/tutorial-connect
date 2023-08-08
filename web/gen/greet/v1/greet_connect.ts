@@ -22,13 +22,22 @@ export const GreetService = {
       kind: MethodKind.Unary,
     },
     /**
-     * @generated from rpc greet.v1.GreetService.StreamGreet
+     * @generated from rpc greet.v1.GreetService.GreetServerStream
      */
-    streamGreet: {
-      name: "StreamGreet",
+    greetServerStream: {
+      name: "GreetServerStream",
       I: GreetRequest,
       O: GreetResponse,
       kind: MethodKind.ServerStreaming,
+    },
+    /**
+     * @generated from rpc greet.v1.GreetService.GreetClientStream
+     */
+    greetClientStream: {
+      name: "GreetClientStream",
+      I: GreetRequest,
+      O: GreetResponse,
+      kind: MethodKind.ClientStreaming,
     },
   }
 } as const;
