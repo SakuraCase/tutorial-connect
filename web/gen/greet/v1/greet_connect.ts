@@ -39,6 +39,15 @@ export const GreetService = {
       O: GreetResponse,
       kind: MethodKind.ClientStreaming,
     },
+    /**
+     * @generated from rpc greet.v1.GreetService.GreetBidiStream
+     */
+    greetBidiStream: {
+      name: "GreetBidiStream",
+      I: GreetRequest,
+      O: GreetResponse,
+      kind: MethodKind.BiDiStreaming,
+    },
   }
 } as const;
 

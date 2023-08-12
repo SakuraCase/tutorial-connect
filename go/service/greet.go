@@ -2,7 +2,9 @@ package service
 
 import (
 	"context"
+	"errors"
 	"fmt"
+	"io"
 	"log"
 	"time"
 
@@ -62,4 +64,26 @@ func (s *GreetServer) GreetClientStream(
 	})
 	res.Header().Set("Greet-Version", "v1")
 	return res, nil
+}
+
+func (s *GreetServer) GreetBidiStream(
+	ctx context.Context,
+	stream *connect.BidiStream[greetv1.GreetRequest, greetv1.GreetResponse],
+) error {
+	log.Println("Request headers: ", stream.RequestHeader())
+	for i := 0; ; i++ {
+		msg, err := stream.Receive()
+		if errors.Is(err, io.EOF) {
+			return nil
+		}
+		if err != nil {
+			connect.NewError(connect.CodeInternal, fmt.Errorf("failed to receive request: %w", err))
+		}
+		fmt.Println("Request message: ", msg)
+		if err := stream.Send(&greetv1.GreetResponse{
+			Greeting: fmt.Sprintf("Hello, %s! (%d)", msg.Name, i),
+		}); err != nil {
+			return connect.NewError(connect.CodeInternal, fmt.Errorf("failed to send response: %w", err))
+		}
+	}
 }

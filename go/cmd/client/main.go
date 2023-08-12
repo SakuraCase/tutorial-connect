@@ -49,6 +49,6 @@ func main() {
 		"http://localhost:8080",
 	)
 
-	// greetServerStream(client)
+	greetServerStream(client)
 	greetClientStream(client)
 }

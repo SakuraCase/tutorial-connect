@@ -41,6 +41,9 @@ const (
 	// GreetServiceGreetClientStreamProcedure is the fully-qualified name of the GreetService's
 	// GreetClientStream RPC.
 	GreetServiceGreetClientStreamProcedure = "/greet.v1.GreetService/GreetClientStream"
+	// GreetServiceGreetBidiStreamProcedure is the fully-qualified name of the GreetService's
+	// GreetBidiStream RPC.
+	GreetServiceGreetBidiStreamProcedure = "/greet.v1.GreetService/GreetBidiStream"
 )
 
 // GreetServiceClient is a client for the greet.v1.GreetService service.
@@ -48,6 +51,7 @@ type GreetServiceClient interface {
 	Greet(context.Context, *connect.Request[v1.GreetRequest]) (*connect.Response[v1.GreetResponse], error)
 	GreetServerStream(context.Context, *connect.Request[v1.GreetRequest]) (*connect.ServerStreamForClient[v1.GreetResponse], error)
 	GreetClientStream(context.Context) *connect.ClientStreamForClient[v1.GreetRequest, v1.GreetResponse]
+	GreetBidiStream(context.Context) *connect.BidiStreamForClient[v1.GreetRequest, v1.GreetResponse]
 }
 
 // NewGreetServiceClient constructs a client for the greet.v1.GreetService service. By default, it
@@ -75,6 +79,11 @@ func NewGreetServiceClient(httpClient connect.HTTPClient, baseURL string, opts .
 			baseURL+GreetServiceGreetClientStreamProcedure,
 			opts...,
 		),
+		greetBidiStream: connect.NewClient[v1.GreetRequest, v1.GreetResponse](
+			httpClient,
+			baseURL+GreetServiceGreetBidiStreamProcedure,
+			opts...,
+		),
 	}
 }
 
@@ -83,6 +92,7 @@ type greetServiceClient struct {
 	greet             *connect.Client[v1.GreetRequest, v1.GreetResponse]
 	greetServerStream *connect.Client[v1.GreetRequest, v1.GreetResponse]
 	greetClientStream *connect.Client[v1.GreetRequest, v1.GreetResponse]
+	greetBidiStream   *connect.Client[v1.GreetRequest, v1.GreetResponse]
 }
 
 // Greet calls greet.v1.GreetService.Greet.
@@ -100,11 +110,17 @@ func (c *greetServiceClient) GreetClientStream(ctx context.Context) *connect.Cli
 	return c.greetClientStream.CallClientStream(ctx)
 }
 
+// GreetBidiStream calls greet.v1.GreetService.GreetBidiStream.
+func (c *greetServiceClient) GreetBidiStream(ctx context.Context) *connect.BidiStreamForClient[v1.GreetRequest, v1.GreetResponse] {
+	return c.greetBidiStream.CallBidiStream(ctx)
+}
+
 // GreetServiceHandler is an implementation of the greet.v1.GreetService service.
 type GreetServiceHandler interface {
 	Greet(context.Context, *connect.Request[v1.GreetRequest]) (*connect.Response[v1.GreetResponse], error)
 	GreetServerStream(context.Context, *connect.Request[v1.GreetRequest], *connect.ServerStream[v1.GreetResponse]) error
 	GreetClientStream(context.Context, *connect.ClientStream[v1.GreetRequest]) (*connect.Response[v1.GreetResponse], error)
+	GreetBidiStream(context.Context, *connect.BidiStream[v1.GreetRequest, v1.GreetResponse]) error
 }
 
 // NewGreetServiceHandler builds an HTTP handler from the service implementation. It returns the
@@ -128,6 +144,11 @@ func NewGreetServiceHandler(svc GreetServiceHandler, opts ...connect.HandlerOpti
 		svc.GreetClientStream,
 		opts...,
 	)
+	greetServiceGreetBidiStreamHandler := connect.NewBidiStreamHandler(
+		GreetServiceGreetBidiStreamProcedure,
+		svc.GreetBidiStream,
+		opts...,
+	)
 	return "/greet.v1.GreetService/", http.HandlerFunc(func(w http.ResponseWriter, r *http.Request) {
 		switch r.URL.Path {
 		case GreetServiceGreetProcedure:
@@ -136,6 +157,8 @@ func NewGreetServiceHandler(svc GreetServiceHandler, opts ...connect.HandlerOpti
 			greetServiceGreetServerStreamHandler.ServeHTTP(w, r)
 		case GreetServiceGreetClientStreamProcedure:
 			greetServiceGreetClientStreamHandler.ServeHTTP(w, r)
+		case GreetServiceGreetBidiStreamProcedure:
+			greetServiceGreetBidiStreamHandler.ServeHTTP(w, r)
 		default:
 			http.NotFound(w, r)
 		}
@@ -155,4 +178,8 @@ func (UnimplementedGreetServiceHandler) GreetServerStream(context.Context, *conn
 
 func (UnimplementedGreetServiceHandler) GreetClientStream(context.Context, *connect.ClientStream[v1.GreetRequest]) (*connect.Response[v1.GreetResponse], error) {
 	return nil, connect.NewError(connect.CodeUnimplemented, errors.New("greet.v1.GreetService.GreetClientStream is not implemented"))
+}
+
+func (UnimplementedGreetServiceHandler) GreetBidiStream(context.Context, *connect.BidiStream[v1.GreetRequest, v1.GreetResponse]) error {
+	return connect.NewError(connect.CodeUnimplemented, errors.New("greet.v1.GreetService.GreetBidiStream is not implemented"))
 }

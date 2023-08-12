@@ -16,4 +16,5 @@ service GreetService {
   rpc Greet(GreetRequest) returns (GreetResponse) {}
   rpc GreetServerStream(GreetRequest) returns (stream GreetResponse) {}
   rpc GreetClientStream(stream GreetRequest) returns (GreetResponse) {}
+  rpc GreetBidiStream(stream GreetRequest) returns (stream GreetResponse) {}
 }
