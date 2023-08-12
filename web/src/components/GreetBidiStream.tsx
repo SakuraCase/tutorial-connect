@@ -2,13 +2,13 @@ import { useState } from "react";
 import { GreetService } from "../../gen/greet/v1/greet_connect";
 import { useClient } from "../hooks/useClient";
 
-function Greet() {
+function GreetBidiStream() {
   const client = useClient(GreetService);
   const [inputValue, setInputValue] = useState("");
   const [messages, setMessages] = useState<string[]>([]);
   return (
     <>
-      <h2>Greet</h2>
+      <h2>GreetBidiStream</h2>
       <ol>
         {messages.map((msg, index) => (
           <li key={index}>{msg}</li>
@@ -18,10 +18,19 @@ function Greet() {
         onSubmit={async (e) => {
           e.preventDefault();
           setInputValue("");
-          const response = await client.greet({
-            name: inputValue,
-          });
-          setMessages((prev) => [...prev, response.greeting]);
+
+          const stream = await client.greetBidiStream(
+            (async function* () {
+              for (let i = 0; i < 3; i++) {
+                yield { name: inputValue };
+              }
+            })()
+          );
+
+          for await (const res of stream) {
+            setMessages((prev) => [...prev, res.greeting]);
+          }
+          console.log("done");
         }}
       >
         <input
@@ -34,4 +43,4 @@ function Greet() {
   );
 }
 
-export default Greet;
+export default GreetBidiStream;

@@ -2,13 +2,13 @@ import { useState } from "react";
 import { GreetService } from "../../gen/greet/v1/greet_connect";
 import { useClient } from "../hooks/useClient";
 
-function Greet() {
+function GreetServerStream() {
   const client = useClient(GreetService);
   const [inputValue, setInputValue] = useState("");
   const [messages, setMessages] = useState<string[]>([]);
   return (
     <>
-      <h2>Greet</h2>
+      <h2>GreetServerStream</h2>
       <ol>
         {messages.map((msg, index) => (
           <li key={index}>{msg}</li>
@@ -18,10 +18,12 @@ function Greet() {
         onSubmit={async (e) => {
           e.preventDefault();
           setInputValue("");
-          const response = await client.greet({
+          for await (const res of client.greetServerStream({
             name: inputValue,
-          });
-          setMessages((prev) => [...prev, response.greeting]);
+          })) {
+            setMessages((prev) => [...prev, res.greeting]);
+          }
+          console.log("done");
         }}
       >
         <input
@@ -34,4 +36,4 @@ function Greet() {
   );
 }
 
-export default Greet;
+export default GreetServerStream;
